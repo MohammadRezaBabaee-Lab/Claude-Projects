@@ -72,6 +72,12 @@ breaker apply unchanged in live mode.
 
 ---
 
+> **First-time setup for the demo links above:** GitHub Pages has to be switched on once, by
+> hand — a workflow cannot do it, because creating a Pages site needs repository admin rights.
+> Go to **Settings → Pages**, set *Source* to **GitHub Actions**, then re-run the `pages`
+> workflow (Actions → pages → Run workflow). The site publishes automatically on every push
+> after that.
+
 ## Repository layout
 
 ```
