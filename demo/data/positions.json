@@ -1,0 +1,29 @@
+[
+ {
+  "symbol": "XOM",
+  "quantity": "52",
+  "avg_cost": "218.4427",
+  "current_price": "298.7167",
+  "market_value": "15533.27",
+  "unrealized_pnl": "4174.25",
+  "weight": "0.1275"
+ },
+ {
+  "symbol": "AAPL",
+  "quantity": "53",
+  "avg_cost": "218.3272",
+  "current_price": "266.3027",
+  "market_value": "14114.04",
+  "unrealized_pnl": "2542.70",
+  "weight": "0.1158"
+ },
+ {
+  "symbol": "MSFT",
+  "quantity": "23",
+  "avg_cost": "519.4219",
+  "current_price": "544.4348",
+  "market_value": "12522.00",
+  "unrealized_pnl": "575.30",
+  "weight": "0.1028"
+ }
+]

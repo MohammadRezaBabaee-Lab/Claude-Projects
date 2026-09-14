@@ -1,0 +1,35 @@
+# --- Secrets: never commit credentials ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Runtime data ---
+trading-agent/data/*.db
+trading-agent/data/*.db-*
+trading-agent/data/history/*.csv
+logs/
+*.log
+reports/
+_site/
+
+# --- Editors / OS ---
+.idea/
+.vscode/
+.DS_Store

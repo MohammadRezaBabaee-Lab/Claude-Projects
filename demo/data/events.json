@@ -1,0 +1,94 @@
+{
+ "system": [
+  {
+   "timestamp": "2025-12-31T21:00:00+00:00",
+   "event_type": "cycle_completed",
+   "severity": "INFO",
+   "correlation_id": "demo0001",
+   "component": "scheduler.cycle",
+   "message": "cycle completed: all symbols evaluated, reconciliation clean"
+  },
+  {
+   "timestamp": "2025-12-31T20:55:00+00:00",
+   "event_type": "reconciliation",
+   "severity": "INFO",
+   "correlation_id": "demo0002",
+   "component": "execution.reconciliation",
+   "message": "reconciliation clean: no mismatches, no foreign orders"
+  },
+  {
+   "timestamp": "2025-12-31T12:00:00+00:00",
+   "event_type": "startup",
+   "severity": "INFO",
+   "correlation_id": "demo0003",
+   "component": "runner",
+   "message": "agent started (PAPER TRADING)"
+  }
+ ],
+ "risk": [
+  {
+   "timestamp": "2025-12-31T21:00:00+00:00",
+   "event_type": "risk_veto",
+   "severity": "WARNING",
+   "correlation_id": "1fbea8b7f1d34a58",
+   "symbol": "SPY",
+   "detail": "risk manager veto: max_open_positions (4 positions after trade)"
+  },
+  {
+   "timestamp": "2025-12-12T21:00:00+00:00",
+   "event_type": "risk_veto",
+   "severity": "WARNING",
+   "correlation_id": "d49ef98ffcfb44b4",
+   "symbol": "MSFT",
+   "detail": "risk manager veto: max_open_positions (4 positions after trade)"
+  },
+  {
+   "timestamp": "2025-12-12T21:00:00+00:00",
+   "event_type": "risk_veto",
+   "severity": "WARNING",
+   "correlation_id": "d49ef98ffcfb44b4",
+   "symbol": "SPY",
+   "detail": "risk manager veto: max_open_positions (4 positions after trade)"
+  },
+  {
+   "timestamp": "2025-12-11T21:00:00+00:00",
+   "event_type": "risk_veto",
+   "severity": "WARNING",
+   "correlation_id": "e0f4547b11cb4dcf",
+   "symbol": "MSFT",
+   "detail": "risk manager veto: max_open_positions (4 positions after trade)"
+  },
+  {
+   "timestamp": "2025-12-11T21:00:00+00:00",
+   "event_type": "risk_veto",
+   "severity": "WARNING",
+   "correlation_id": "e0f4547b11cb4dcf",
+   "symbol": "SPY",
+   "detail": "risk manager veto: max_open_positions (4 positions after trade)"
+  },
+  {
+   "timestamp": "2025-12-10T21:00:00+00:00",
+   "event_type": "risk_veto",
+   "severity": "WARNING",
+   "correlation_id": "d0958fd1396747e7",
+   "symbol": "MSFT",
+   "detail": "risk manager veto: max_open_positions (4 positions after trade)"
+  },
+  {
+   "timestamp": "2025-12-10T21:00:00+00:00",
+   "event_type": "risk_veto",
+   "severity": "WARNING",
+   "correlation_id": "d0958fd1396747e7",
+   "symbol": "SPY",
+   "detail": "risk manager veto: max_open_positions (4 positions after trade)"
+  },
+  {
+   "timestamp": "2025-12-09T21:00:00+00:00",
+   "event_type": "risk_veto",
+   "severity": "WARNING",
+   "correlation_id": "77fdb6fda0724546",
+   "symbol": "SPY",
+   "detail": "risk manager veto: max_open_positions (4 positions after trade)"
+  }
+ ]
+}

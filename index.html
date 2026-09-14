@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trading Agent — automated trading that defaults to not trading</title>
+<meta name="description" content="A production-grade automated trading agent: backtesting, paper trading and a gated live broker adapter. Paper by default; live execution needs a deliberate multi-flag gate.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f1419'/%3E%3Crect x='8' y='9' width='4' height='14' fill='%233fb950'/%3E%3Crect x='9.4' y='6' width='1.2' height='20' fill='%233fb950'/%3E%3Crect x='19' y='13' width='4' height='10' fill='%23f85149'/%3E%3Crect x='20.4' y='10' width='1.2' height='16' fill='%23f85149'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0d1218; --bg2:#121a22; --panel:#161d26; --border:#263041;
+    --text:#e6edf3; --muted:#8b98a9; --dim:#6b7888;
+    --accent:#58a6ff; --green:#3fb950; --red:#f85149; --amber:#d29922;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky;top:0;z-index:20;background:rgba(13,18,24,.88);backdrop-filter:blur(8px);
+      border-bottom:1px solid var(--border)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:56px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:650;color:var(--text)}
+  .brand svg{display:block}
+  .navlinks{display:flex;gap:20px;font-size:14.5px;flex-wrap:wrap}
+  .navlinks a{color:var(--muted)}
+  .navlinks a:hover{color:var(--text);text-decoration:none}
+
+  /* ---------- hero ---------- */
+  header{padding:72px 0 8px;border-bottom:1px solid var(--border);
+         background:radial-gradient(900px 380px at 50% -140px,rgba(88,166,255,.13),transparent 70%)}
+  h1{font-size:clamp(38px,6.5vw,60px);line-height:1.05;margin:0 0 16px;letter-spacing:-.02em}
+  .tagline{font-size:clamp(17px,2.4vw,21px);color:var(--muted);max-width:62ch;margin:0 0 26px}
+  .tagline b{color:var(--text);font-weight:600}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+  .badge{font:12.5px/1 var(--mono);padding:6px 10px;border-radius:5px;
+         background:var(--bg2);border:1px solid var(--border);color:var(--muted)}
+  .badge b{color:var(--text);font-weight:600}
+  .cta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:34px}
+  .btn{display:inline-block;padding:11px 20px;border-radius:7px;font-weight:600;font-size:15px;
+       border:1px solid var(--border);background:var(--bg2);color:var(--text)}
+  .btn:hover{border-color:#3d4b5f;text-decoration:none}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#08121f}
+  .btn.primary:hover{background:#7ab8ff;border-color:#7ab8ff}
+
+  /* ---------- safety strip ---------- */
+  .safety{margin:0 0 56px;border:1px solid #2d4a63;border-left:4px solid var(--accent);
+          border-radius:9px;background:linear-gradient(180deg,#14212e,#121a22);padding:18px 22px}
+  .safety h3{margin:0 0 6px;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+  .safety p{margin:0;color:var(--muted);font-size:15px}
+  .safety code{font:13.5px var(--mono);color:var(--text);background:#0d1218;padding:2px 6px;border-radius:4px}
+
+  /* ---------- sections ---------- */
+  section{padding:56px 0;border-bottom:1px solid var(--border)}
+  section:last-of-type{border-bottom:0}
+  h2{font-size:clamp(24px,3.4vw,31px);margin:0 0 10px;letter-spacing:-.01em}
+  .lede{color:var(--muted);max-width:68ch;margin:0 0 30px;font-size:16.5px}
+  h3{font-size:17px;margin:0 0 8px}
+
+  .grid{display:grid;gap:18px}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(255px,1fr))}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px}
+  .card p{margin:0;color:var(--muted);font-size:15px}
+  .card .ico{font-size:20px;margin-bottom:10px;display:block}
+
+  .stage{display:flex;gap:16px;align-items:flex-start;background:var(--panel);
+         border:1px solid var(--border);border-radius:10px;padding:20px}
+  .stage .num{flex:0 0 38px;height:38px;border-radius:9px;display:grid;place-items:center;
+              font-weight:700;background:#1d2938;color:var(--accent);border:1px solid var(--border)}
+  .stage.live .num{color:var(--red)}
+  .stage p{margin:0;color:var(--muted);font-size:15px}
+  .pill{display:inline-block;font:11.5px/1 var(--mono);padding:4px 8px;border-radius:20px;
+        border:1px solid currentColor;margin-left:8px;vertical-align:2px}
+  .pill.ok{color:var(--green)} .pill.no{color:var(--red)}
+
+  pre{background:#0b1017;border:1px solid var(--border);border-radius:9px;padding:16px 18px;
+      overflow-x:auto;margin:0 0 16px;font:13.5px/1.7 var(--mono);color:#cfe0f2}
+  pre .c{color:var(--dim)}
+  pre .k{color:var(--green)}
+
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+  td code,li code,p code{font:13px var(--mono);color:#9fd0ff;background:#101823;padding:2px 6px;border-radius:4px}
+  .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--panel)}
+  .tablewrap table{min-width:520px}
+  .tablewrap tr:last-child td{border-bottom:0}
+
+  .shot{display:block;width:100%;border:1px solid var(--border);border-radius:10px;margin-top:8px}
+  figure{margin:0}
+  figcaption{color:var(--dim);font-size:13.5px;margin-top:10px}
+
+  ul.clean{list-style:none;padding:0;margin:0}
+  ul.clean li{padding:9px 0;border-bottom:1px solid var(--border);color:var(--muted);font-size:15px}
+  ul.clean li:last-child{border-bottom:0}
+  ul.clean b{color:var(--text)}
+
+  footer{padding:40px 0 60px;color:var(--dim);font-size:14px}
+  footer p{margin:0 0 10px;max-width:74ch}
+  .disc{border:1px solid #3a2a2a;background:#1b1414;border-radius:9px;padding:16px 18px;color:#d7b9b9;margin-bottom:22px}
+  @media (max-width:620px){ header{padding-top:48px} section{padding:42px 0} }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <span class="brand">
+    <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="6" fill="#161d26"/>
+      <rect x="8" y="9" width="4" height="14" fill="#3fb950"/><rect x="9.4" y="6" width="1.2" height="20" fill="#3fb950"/>
+      <rect x="19" y="13" width="4" height="10" fill="#f85149"/><rect x="20.4" y="10" width="1.2" height="16" fill="#f85149"/>
+    </svg>
+    Trading Agent
+  </span>
+  <span class="navlinks">
+    <a href="#why">Why</a><a href="#how">How it works</a><a href="#stages">Stages</a>
+    <a href="#start">Quick start</a><a href="#gate">Live gate</a><a href="#docs">Docs</a>
+    <a href="demo/">Demo</a>
+    <a href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects">GitHub</a>
+  </span>
+</div></nav>
+
+<header><div class="wrap">
+  <h1>Automated trading that<br>defaults to not trading.</h1>
+  <p class="tagline">
+    A production-grade algorithmic trading agent with a complete backtester, a realistic paper-trading
+    broker, and a real brokerage adapter that <b>stays switched off until you deliberately open a
+    six-part safety gate</b>.
+  </p>
+  <div class="badges">
+    <span class="badge">Python <b>3.11+</b></span>
+    <span class="badge"><b>116</b> tests</span>
+    <span class="badge"><b>23</b> risk checks</span>
+    <span class="badge">Broker-agnostic</span>
+    <span class="badge">SQLite / PostgreSQL</span>
+    <span class="badge">License <b>MIT</b></span>
+  </div>
+  <div class="cta">
+    <a class="btn primary" href="demo/">Open the live dashboard demo</a>
+    <a class="btn" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/tree/main/trading-agent">Browse the code</a>
+    <a class="btn" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/raw/main/trading-agent/docs/Trading-Agent-How-To-Guide.docx">How-To guide (38 pages)</a>
+  </div>
+  <div class="safety">
+    <h3>Default state</h3>
+    <p><code>TRADING_MODE=paper</code> &nbsp; <code>TRADING_ENABLED=false</code> &nbsp; <code>LIVE_TRADING_CONFIRMED=false</code><br>
+    Out of the box the agent watches markets, decides, records and alerts — and submits nothing.
+    Leaving a live confirmation set while in paper mode is a startup error, so no single variable
+    can ever flip it into live trading.</p>
+  </div>
+</div></header>
+
+<section id="why"><div class="wrap">
+  <h2>Why another trading bot?</h2>
+  <p class="lede">Most open-source trading bots optimise for how quickly you can place a trade.
+     This one optimises for everything that happens when something goes wrong.</p>
+  <div class="grid g3">
+    <div class="card"><span class="ico">🛑</span><h3>Risk can veto the strategy</h3>
+      <p>A separate risk manager runs 23 independent checks after every signal. Any failure blocks the
+         order, and the strategy has no way to override it. Vetoes are stored with the numbers that caused them.</p></div>
+    <div class="card"><span class="ico">🔁</span><h3>No duplicate trades, ever</h3>
+      <p>An idempotency key is written to the database before the broker is called. A lost response
+         triggers a lookup, never a resend. Crashes, timeouts and retries are covered by dedicated failure tests.</p></div>
+    <div class="card"><span class="ico">🔍</span><h3>Every decision is explainable</h3>
+      <p>Buys, sells, holds and vetoes all store the signal, indicator values, portfolio state, each risk
+         check and the sizing arithmetic — in plain language you can read months later.</p></div>
+    <div class="card"><span class="ico">🧪</span><h3>Backtests that don't flatter you</h3>
+      <p>Signals compute at the close and fill at the next open, so look-ahead is impossible by construction.
+         A test tampers with future prices and asserts nothing before the cutoff changes.</p></div>
+    <div class="card"><span class="ico">⚡</span><h3>Failure is a first-class case</h3>
+      <p>Broker outages, stale quotes, malformed prices, partial fills, unknown submission outcomes and
+         mid-flight restarts each have a defined behaviour and a test that proves it.</p></div>
+    <div class="card"><span class="ico">🔌</span><h3>Not tied to one broker</h3>
+      <p>Strategies never import the broker layer — a test enforces it. Adapters ship for a simulated
+         broker and for Alpaca; Saxo and Nordnet are documented as the next Nordic additions.</p></div>
+  </div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <h2>How it works</h2>
+  <p class="lede">Market data enters at the top and an order leaves at the bottom. Every stage can stop
+     the flow, and nothing skips a stage.</p>
+  <figure>
+  <svg class="shot" viewBox="0 0 900 260" role="img" aria-label="Pipeline: market data, features, strategy, signal, risk manager, position sizer, portfolio manager, order manager, broker">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#4a5b70"/>
+      </marker>
+    </defs>
+    <g font-family="system-ui,sans-serif" font-size="13" fill="#e6edf3">
+      <!-- row 1 -->
+      <g>
+        <rect x="14" y="26" width="150" height="46" rx="8" fill="#161d26" stroke="#2b3647"/>
+        <text x="89" y="46" text-anchor="middle" font-size="12.5">Market Data</text>
+        <text x="89" y="62" text-anchor="middle" font-size="10.5" fill="#8b98a9">validated + staleness</text>
+      </g>
+      <line x1="168" y1="49" x2="204" y2="49" stroke="#4a5b70" stroke-width="1.6" marker-end="url(#ar)"/>
+      <g>
+        <rect x="208" y="26" width="150" height="46" rx="8" fill="#161d26" stroke="#2b3647"/>
+        <text x="283" y="46" text-anchor="middle" font-size="12.5">Features</text>
+        <text x="283" y="62" text-anchor="middle" font-size="10.5" fill="#8b98a9">SMA · ATR · volatility</text>
+      </g>
+      <line x1="362" y1="49" x2="398" y2="49" stroke="#4a5b70" stroke-width="1.6" marker-end="url(#ar)"/>
+      <g>
+        <rect x="402" y="26" width="150" height="46" rx="8" fill="#161d26" stroke="#2b3647"/>
+        <text x="477" y="46" text-anchor="middle" font-size="12.5">Strategy</text>
+        <text x="477" y="62" text-anchor="middle" font-size="10.5" fill="#8b98a9">pluggable</text>
+      </g>
+      <line x1="556" y1="49" x2="592" y2="49" stroke="#4a5b70" stroke-width="1.6" marker-end="url(#ar)"/>
+      <g>
+        <rect x="596" y="26" width="150" height="46" rx="8" fill="#161d26" stroke="#2b3647"/>
+        <text x="671" y="46" text-anchor="middle" font-size="12.5">Signal</text>
+        <text x="671" y="62" text-anchor="middle" font-size="10.5" fill="#8b98a9">buy · sell · hold</text>
+      </g>
+      <!-- connector down -->
+      <path d="M746 49 H 812 V 118 H 758" fill="none" stroke="#4a5b70" stroke-width="1.6" marker-end="url(#ar)"/>
+      <!-- row 2 -->
+      <g>
+        <rect x="596" y="95" width="150" height="46" rx="8" fill="#1b2430" stroke="#f85149"/>
+        <text x="671" y="115" text-anchor="middle" font-size="12.5" fill="#ffb4b0">Risk Manager</text>
+        <text x="671" y="131" text-anchor="middle" font-size="10.5" fill="#d99">23 checks · can veto</text>
+      </g>
+      <line x1="592" y1="118" x2="556" y2="118" stroke="#4a5b70" stroke-width="1.6" marker-end="url(#ar)"/>
+      <g>
+        <rect x="402" y="95" width="150" height="46" rx="8" fill="#161d26" stroke="#2b3647"/>
+        <text x="477" y="115" text-anchor="middle" font-size="12.5">Position Sizer</text>
+        <text x="477" y="131" text-anchor="middle" font-size="10.5" fill="#8b98a9">volatility-based</text>
+      </g>
+      <line x1="398" y1="118" x2="362" y2="118" stroke="#4a5b70" stroke-width="1.6" marker-end="url(#ar)"/>
+      <g>
+        <rect x="208" y="95" width="150" height="46" rx="8" fill="#161d26" stroke="#2b3647"/>
+        <text x="283" y="115" text-anchor="middle" font-size="12.5">Portfolio Manager</text>
+        <text x="283" y="131" text-anchor="middle" font-size="10.5" fill="#8b98a9">cash · exposure · P&amp;L</text>
+      </g>
+      <path d="M208 118 H 150 V 187 H 208" fill="none" stroke="#4a5b70" stroke-width="1.6" marker-end="url(#ar)"/>
+      <!-- row 3 -->
+      <g>
+        <rect x="208" y="164" width="196" height="46" rx="8" fill="#161d26" stroke="#2b3647"/>
+        <text x="306" y="184" text-anchor="middle" font-size="12.5">Order Manager</text>
+        <text x="306" y="200" text-anchor="middle" font-size="10.5" fill="#8b98a9">11-step checklist · idempotent</text>
+      </g>
+      <line x1="408" y1="187" x2="452" y2="187" stroke="#4a5b70" stroke-width="1.6" marker-end="url(#ar)"/>
+      <g>
+        <rect x="456" y="164" width="196" height="46" rx="8" fill="#121c26" stroke="#3fb950"/>
+        <text x="554" y="184" text-anchor="middle" font-size="12.5" fill="#9de3ae">Broker</text>
+        <text x="554" y="200" text-anchor="middle" font-size="10.5" fill="#7fb98d">simulated · Alpaca</text>
+      </g>
+      <text x="676" y="190" font-size="11" fill="#8b98a9">paper by default</text>
+    </g>
+  </svg>
+  <figcaption>The same decision engine drives backtesting, paper trading and live trading, so a strategy
+    behaves identically in all three. Only the broker and the data source change.</figcaption>
+  </figure>
+</div></section>
+
+<section id="stages"><div class="wrap">
+  <h2>Three stages, in order</h2>
+  <p class="lede">Each stage must be passed before the next is used. The first two carry no financial risk at all.</p>
+  <div class="grid" style="gap:14px">
+    <div class="stage"><div class="num">1</div><div>
+      <h3>Backtesting <span class="pill ok">no risk</span></h3>
+      <p>Replays history through the complete strategy, risk and portfolio engine. Reports CAGR, Sharpe,
+         Sortino, maximum drawdown, win rate, profit factor, transaction costs, slippage, exposure and
+         position concentration — with look-ahead and survivorship controls built into the engine.</p></div></div>
+    <div class="stage"><div class="num">2</div><div>
+      <h3>Paper trading <span class="pill ok">no risk</span></h3>
+      <p>The live agent loop against real or delayed market data, with orders routed to a simulated broker
+         that models cash, commissions, slippage, market hours, partial fills, rejections and order-status
+         transitions. State survives restarts.</p></div></div>
+    <div class="stage live"><div class="num">3</div><div>
+      <h3>Live trading <span class="pill no">gated, off by default</span></h3>
+      <p>A real brokerage adapter that only points at the live endpoint once five configuration values and
+         one command-line flag all agree. Every risk limit, the kill switch and the circuit breaker apply
+         unchanged.</p></div></div>
+  </div>
+</div></section>
+
+<section id="start"><div class="wrap">
+  <h2>Quick start</h2>
+  <p class="lede">No broker account and no network access needed for the first two commands — synthetic
+     prices are generated locally and deterministically.</p>
+  <div class="grid g2">
+    <div>
+      <h3>Install</h3>
+<pre><span class="c"># clone and install</span>
+git clone https://github.com/MohammadRezaBabaee-Lab/Claude-Projects.git
+cd Claude-Projects/trading-agent
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -e <span class="k">".[dev]"</span>
+cp .env.example .env
+trading-agent validate-config</pre>
+    </div>
+    <div>
+      <h3>Backtest, then paper trade</h3>
+<pre><span class="c"># Stage 1 — a full backtest on synthetic prices</span>
+trading-agent backtest --synthetic \
+    --symbols AAA,BBB,CCC \
+    --start 2022-01-03 --end 2024-12-31
+
+<span class="c"># Stage 2 — one paper-trading cycle</span>
+MARKET_DATA_PROVIDER=synthetic TRADING_ENABLED=true \
+    trading-agent run --once
+
+<span class="c"># the dashboard you can see in the demo above</span>
+trading-agent dashboard</pre>
+    </div>
+  </div>
+</div></section>
+
+<section id="gate"><div class="wrap">
+  <h2>The live-trading gate</h2>
+  <p class="lede">Real orders are submitted only when <em>every</em> row below holds. Each is checked when
+     the process starts, and again inside the order manager at the moment of submission.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Condition</th><th>Enforced where</th></tr></thead>
+    <tbody>
+      <tr><td><code>TRADING_MODE=live</code></td><td>Configuration validator</td></tr>
+      <tr><td><code>TRADING_ENABLED=true</code></td><td>Configuration validator, risk manager, order manager</td></tr>
+      <tr><td><code>LIVE_TRADING_CONFIRMED=true</code></td><td>Configuration validator</td></tr>
+      <tr><td><code>LIVE_TRADING_CONFIRMATION_PHRASE</code> equals an exact sentence</td><td>Configuration validator</td></tr>
+      <tr><td><code>BROKER</code> is a real adapter, never <code>simulated</code></td><td>Configuration validator</td></tr>
+      <tr><td><code>--i-understand-live-trading</code> on the command line</td><td>Command-line interface</td></tr>
+    </tbody>
+  </table></div>
+  <p class="lede" style="margin-top:22px">Plus three properties that make the gate hard to open by accident:
+     a live confirmation left set in paper mode is a <b>startup error</b>; the adapter refuses to submit a
+     live order to any non-official endpoint; and nothing is relaxed in live mode.</p>
+</div></section>
+
+<section id="inside"><div class="wrap">
+  <h2>What's inside</h2>
+  <div class="grid g2">
+    <div>
+      <h3>Repository layout</h3>
+<pre>trading-agent/
+├── trading_agent/
+│   ├── broker/        <span class="c"># simulated · alpaca · avanza(refuses)</span>
+│   ├── market_data/   <span class="c"># csv · alpaca · synthetic · replay</span>
+│   ├── strategies/    <span class="c"># pluggable; trend-following baseline</span>
+│   ├── risk/          <span class="c"># manager · sizing · circuit breaker</span>
+│   ├── portfolio/     <span class="c"># capital buckets · performance</span>
+│   ├── execution/     <span class="c"># order manager · reconciliation</span>
+│   ├── backtesting/   <span class="c"># event-driven engine · reports</span>
+│   ├── scheduler/     <span class="c"># trading cycle · runner</span>
+│   └── api/           <span class="c"># read-only dashboard</span>
+├── tests/             <span class="c"># unit · integration · failure</span>
+├── migrations/        <span class="c"># alembic</span>
+└── docs/              <span class="c"># architecture, risk, security, live</span></pre>
+    </div>
+    <div>
+      <h3>Notable properties</h3>
+      <ul class="clean">
+        <li><b>Decimal money.</b> No binary floating point anywhere a price, quantity or cash amount is computed.</li>
+        <li><b>Fail-closed config.</b> Invalid settings stop the process rather than starting a trading system in a nonsensical state.</li>
+        <li><b>Real trading calendars.</b> Holidays and early closes via <code>exchange_calendars</code>; XNYS and XSTO supported.</li>
+        <li><b>Full audit trail.</b> Fourteen tables covering decisions, orders, fills, snapshots, risk events and configuration changes.</li>
+        <li><b>Structured logs.</b> JSON with a correlation id per cycle, and a redaction filter so credentials never reach a log line.</li>
+        <li><b>Prometheus metrics.</b> Latency, rejection rate, data age, exposure, drawdown and P&amp;L.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="docs"><div class="wrap">
+  <h2>Documentation</h2>
+  <p class="lede">Written for two readers: an operator running the agent and a developer extending it.</p>
+  <div class="grid g3">
+    <a class="card" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/raw/main/trading-agent/docs/Trading-Agent-How-To-Guide.docx">
+      <h3>How-To Guide (Word, 38 pp)</h3>
+      <p>The complete operator and developer manual: installation, backtesting, paper trading, risk tuning,
+         incident response, going live, and reference appendices.</p></a>
+    <a class="card" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/blob/main/trading-agent/docs/architecture.md">
+      <h3>Architecture</h3><p>Components, data flow, the trading cycle, persistence and time handling.</p></a>
+    <a class="card" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/blob/main/trading-agent/docs/broker_integration.md">
+      <h3>Broker integration</h3><p>Which APIs were assessed, why Alpaca, what it can and cannot do, and how to add another.</p></a>
+    <a class="card" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/blob/main/trading-agent/docs/risk_management.md">
+      <h3>Risk management</h3><p>Every limit, the sizing formula, the kill switch and the circuit breaker.</p></a>
+    <a class="card" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/blob/main/trading-agent/docs/security.md">
+      <h3>Security</h3><p>Secret handling, least privilege, transport, input validation and dashboard exposure.</p></a>
+    <a class="card" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/blob/main/trading-agent/docs/live_trading.md">
+      <h3>Enabling live trading</h3><p>Prerequisites, how each part of the gate is enforced, and the step-by-step procedure.</p></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="disc">
+    <b>Not investment advice.</b> This software can place real financial orders. It is an execution engine,
+    not a forecasting oracle, and nothing here claims or implies that any strategy will be profitable.
+    Automated trading can lose money quickly. The bundled trend-following strategy is a simple, explainable
+    baseline for validating the machinery — not a recommendation. You are responsible for your own trading
+    decisions and for complying with your broker's terms and your local regulations.
+  </div>
+  <p>The dashboard demo renders a frozen snapshot of backtest output on <b>synthetic</b> prices with a
+     simulated broker. It demonstrates system behaviour, not strategy performance.</p>
+  <p>MIT licensed · <a href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects">MohammadRezaBabaee-Lab/Claude-Projects</a></p>
+</div></footer>
+
+</body>
+</html>

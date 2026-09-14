@@ -1,0 +1,42 @@
+# --- Secrets: never commit credentials ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.live_trading_confirmed
+credentials*.json
+token*.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Runtime data ---
+data/*.db
+data/history/*.csv
+data/*.db-journal
+data/*.sqlite*
+data/state/
+logs/
+*.log
+reports/
+
+# --- Editors / OS ---
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,13 @@
+{
+ "generated_from": "trading_agent.backtesting.BacktestEngine on synthetic prices",
+ "period": {
+  "start": "2023-01-03",
+  "end": "2025-12-31"
+ },
+ "sessions": 752,
+ "decisions": 3760,
+ "orders": 101,
+ "vetoes": 146,
+ "fills": 101,
+ "disclaimer": "Synthetic prices, simulated broker. Demonstrates system behaviour, not strategy performance."
+}

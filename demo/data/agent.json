@@ -1,0 +1,57 @@
+{
+ "mode": "paper",
+ "paper": true,
+ "banner": "PAPER TRADING",
+ "trading_enabled": true,
+ "live_orders_permitted": false,
+ "kill_switch_active": false,
+ "broker": "simulated",
+ "strategy": "trend_following",
+ "universe": [
+  "AAPL",
+  "MSFT",
+  "JNJ",
+  "XOM",
+  "SPY"
+ ],
+ "demo": true,
+ "status": {
+  "broker_connected": true,
+  "market_open": true,
+  "last_market_data_update": "2025-12-31T21:00:00+00:00",
+  "last_strategy_execution": "2025-12-31T21:00:00+00:00",
+  "last_order": {
+   "client_order_id": "ord_5defc3f7e4c84c8b95a438520f0c9d0d",
+   "broker_order_id": "sim_55c081c5d9f8489e8bf7fdc4f4f49502",
+   "symbol": "SPY",
+   "side": "sell",
+   "quantity": "17",
+   "order_type": "market",
+   "limit_price": null,
+   "stop_price": null,
+   "time_in_force": "day",
+   "status": "filled",
+   "filled_quantity": "17",
+   "avg_fill_price": "658.2467",
+   "commission": "5.60",
+   "strategy": "trend_following",
+   "reason": "close 658.7684 below ATR trailing stop 662.8772 (high 706.81 - 3 x ATR 14.64)",
+   "reject_reason": null,
+   "created_at": "2025-12-24T18:00:00+00:00",
+   "updated_at": "2025-12-26T14:30:00+00:00"
+  },
+  "errors": [],
+  "updated_at": "2025-12-31T21:00:00+00:00",
+  "last_cycle": {
+   "latency_ms": 184,
+   "symbols_evaluated": 5,
+   "orders_submitted": 1,
+   "orders_vetoed": 0
+  }
+ },
+ "circuit_breaker": {
+  "tripped": false,
+  "reason": null,
+  "tripped_at": null
+ }
+}

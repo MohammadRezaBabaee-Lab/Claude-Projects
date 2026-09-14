@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trading Agent Dashboard — Demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f1419'/%3E%3Crect x='8' y='9' width='4' height='14' fill='%233fb950'/%3E%3Crect x='9.4' y='6' width='1.2' height='20' fill='%233fb950'/%3E%3Crect x='19' y='13' width='4' height='10' fill='%23f85149'/%3E%3Crect x='20.4' y='10' width='1.2' height='16' fill='%23f85149'/%3E%3C/svg%3E">
+<style>
+  :root { --bg:#0f1419; --panel:#161d26; --border:#263041; --text:#e6edf3; --muted:#8b98a9; --good:#3fb950; --bad:#f85149; --warn:#d29922; --accent:#58a6ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  .banner { padding:10px 20px; font-weight:700; letter-spacing:.08em; text-align:center; }
+  .banner.paper { background:#1f6feb; color:#fff; }
+  .banner.live { background:var(--bad); color:#fff; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-bottom:1px solid var(--border); }
+  header h1 { font-size:18px; margin:0; }
+  main { padding:16px 20px; display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); }
+  section { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px; min-width:0; }
+  section.wide { grid-column:1 / -1; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 10px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+  .kpi { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px 10px; }
+  .kpi .label { color:var(--muted); font-size:11px; }
+  .kpi .value { font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .pos { color:var(--good); } .neg { color:var(--bad); } .warn { color:var(--warn); }
+  table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+  th, td { text-align:left; padding:5px 6px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  th { color:var(--muted); font-weight:500; font-size:12px; }
+  .scroll { overflow:auto; max-height:320px; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; border:1px solid var(--border); }
+  .pill.ok { border-color:var(--good); color:var(--good); } .pill.bad { border-color:var(--bad); color:var(--bad); } .pill.warn { border-color:var(--warn); color:var(--warn); }
+  svg { width:100%; height:180px; display:block; }
+  .muted { color:var(--muted); }
+  .demo-note { background:#20303f; color:#c6d4e3; border-bottom:1px solid var(--border); padding:9px 20px; font-size:13px; line-height:1.5; }
+  .demo-note strong { color:#fff; }
+  .demo-note a { color:var(--accent); }
+  .backlink { display:inline-block; margin-left:14px; font-size:13px; color:var(--accent); text-decoration:none; font-weight:400; }
+  .backlink:hover { text-decoration:underline; }
+  #agent td { white-space:normal; }
+  #agent th { white-space:nowrap; vertical-align:top; }
+  pre { white-space:pre-wrap; font-size:12px; margin:0; color:var(--muted); }
+  details summary { cursor:pointer; }
+</style>
+</head>
+<body>
+<div id="banner" class="banner paper">PAPER TRADING</div>
+<div class="demo-note">
+  <strong>Static demo.</strong> These panels are the real dashboard rendering a frozen snapshot of
+  <a href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects/blob/main/demo/build_demo_data.py">actual backtest output</a>
+  on <em>synthetic</em> prices with a simulated broker. It shows how the system behaves, not how any strategy performs.
+  Nothing here is real trading, real money or a performance claim.
+</div>
+<header>
+  <h1>Trading Agent<a class="backlink" href="../">&larr; project home</a><a class="backlink" href="https://github.com/MohammadRezaBabaee-Lab/Claude-Projects">GitHub</a></h1>
+  <div class="muted" id="updated">loading…</div>
+</header>
+<main>
+  <section class="wide">
+    <h2>Portfolio</h2>
+    <div class="kpis" id="portfolio"></div>
+  </section>
+  <section>
+    <h2>Agent</h2>
+    <table id="agent"></table>
+  </section>
+  <section>
+    <h2>Orders</h2>
+    <div class="kpis" id="orderCounts"></div>
+  </section>
+  <section class="wide">
+    <h2>Positions</h2>
+    <div class="scroll"><table id="positions"></table></div>
+  </section>
+  <section class="wide">
+    <h2>Equity curve</h2>
+    <svg id="equity" viewBox="0 0 800 180" preserveAspectRatio="none"></svg>
+    <h2 style="margin-top:12px">Drawdown</h2>
+    <svg id="drawdown" viewBox="0 0 800 180" preserveAspectRatio="none"></svg>
+  </section>
+  <section>
+    <h2>Performance</h2>
+    <table id="perf"></table>
+  </section>
+  <section>
+    <h2>Monthly returns</h2>
+    <div class="scroll"><table id="monthly"></table></div>
+  </section>
+  <section class="wide">
+    <h2>Recent orders</h2>
+    <div class="scroll"><table id="orders"></table></div>
+  </section>
+  <section class="wide">
+    <h2>Recent decisions</h2>
+    <div class="scroll" id="decisions"></div>
+  </section>
+  <section class="wide">
+    <h2>Events</h2>
+    <div class="scroll"><table id="events"></table></div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const fmtMoney = (v) => v == null ? '–' : Number(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fmtPct = (v) => v == null ? '–' : (Number(v) * 100).toFixed(2) + '%';
+const cls = (v) => Number(v) > 0 ? 'pos' : Number(v) < 0 ? 'neg' : '';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function j(url) { const r = await fetch(url); if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); }
+
+function kpi(label, value, klass='') { return `<div class="kpi"><div class="label">${esc(label)}</div><div class="value ${klass}">${value}</div></div>`; }
+function pill(ok, text, warn=false) { return `<span class="pill ${ok ? 'ok' : (warn ? 'warn' : 'bad')}">${esc(text)}</span>`; }
+
+function line(svgId, values, color, fillBelow=false, invert=false) {
+  const svg = $(svgId); svg.innerHTML = '';
+  if (!values.length) { svg.innerHTML = '<text x="10" y="30" fill="#8b98a9">no data yet</text>'; return; }
+  const W = 800, H = 180, pad = 6;
+  const min = Math.min(...values), max = Math.max(...values), span = (max - min) || 1;
+  const pts = values.map((v, i) => [pad + (W - 2*pad) * i / Math.max(values.length - 1, 1), invert ? pad + (H - 2*pad) * (v - min) / span : H - pad - (H - 2*pad) * (v - min) / span]);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  let html = '';
+  if (fillBelow) html += `<path d="${d} L${pts[pts.length-1][0].toFixed(1)} ${invert ? pad : H-pad} L${pts[0][0].toFixed(1)} ${invert ? pad : H-pad} Z" fill="${color}" opacity="0.15"/>`;
+  html += `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+  html += `<text x="8" y="14" fill="#8b98a9" font-size="11">${invert ? 'max ' + fmtPct(max) : fmtMoney(max)}</text>`;
+  html += `<text x="8" y="${H-6}" fill="#8b98a9" font-size="11">${invert ? '0%' : fmtMoney(min)}</text>`;
+  svg.innerHTML = html;
+}
+
+async function refresh() {
+  try {
+    const [agent, portfolio, positions, orders, perf, decisions, events] = await Promise.all([
+      j('data/agent.json'), j('data/portfolio.json'), j('data/positions.json'), j('data/orders.json'), j('data/performance.json'), j('data/decisions.json'), j('data/events.json')]);
+    const banner = $('banner');
+    banner.textContent = agent.banner + (agent.kill_switch_active ? '  ·  KILL SWITCH ACTIVE (TRADING_ENABLED=false)' : '');
+    banner.className = 'banner ' + (agent.paper ? 'paper' : 'live');
+    $('updated').textContent = 'snapshot as of ' + (agent.status.updated_at || '').slice(0, 10) + ' · end of a 3-year simulated run';
+
+    $('portfolio').innerHTML = [
+      kpi('Portfolio value', fmtMoney(portfolio.portfolio_value)),
+      kpi('Cash', fmtMoney(portfolio.cash)),
+      kpi('Reserved cash', fmtMoney(portfolio.reserved_cash)),
+      kpi('Invested capital', fmtMoney(portfolio.invested_capital)),
+      kpi('Buying power', fmtMoney(portfolio.buying_power)),
+      kpi('Daily P&L', fmtMoney(portfolio.daily_pnl), cls(portfolio.daily_pnl)),
+      kpi('Total P&L', fmtMoney(portfolio.total_pnl), cls(portfolio.total_pnl)),
+      kpi('Drawdown', fmtPct(portfolio.drawdown), Number(portfolio.drawdown) > 0.05 ? 'warn' : ''),
+      kpi('Exposure', fmtPct(portfolio.exposure)),
+      kpi('Positions', portfolio.n_positions ?? 0),
+    ].join('');
+
+    const st = agent.status, cb = agent.circuit_breaker || {}, lc = st.last_cycle || {};
+    const rows = [
+      ['Trading mode', pill(agent.paper, agent.mode.toUpperCase() + (agent.paper ? ' (paper)' : ' (LIVE)'))],
+      ['Kill switch', agent.trading_enabled ? pill(true, 'trading enabled') : pill(false, 'TRADING_ENABLED=false', true)],
+      ['Live orders permitted', pill(!agent.live_orders_permitted, agent.live_orders_permitted ? 'YES' : 'no')],
+      ['Broker', `${esc(agent.broker)} ${pill(!!st.broker_connected, st.broker_connected ? 'connected' : 'disconnected')}`],
+      ['Market', pill(!!st.market_open, st.market_open ? 'open' : 'closed', true)],
+      ['Circuit breaker', cb.tripped ? pill(false, 'TRIPPED: ' + (cb.trip_reason || cb.reason || '')) : pill(true, 'closed')],
+      ['Strategy', esc(agent.strategy) + ' · ' + esc((agent.universe || []).join(', '))],
+      ['Last market-data update', esc(st.last_market_data_update || '–')],
+      ['Last strategy execution', esc(st.last_strategy_execution || '–') + (lc.latency_ms != null ? ` (${lc.latency_ms} ms)` : '')],
+      ['Last order', st.last_order ? esc(`${st.last_order.side.toUpperCase()} ${st.last_order.quantity} ${st.last_order.symbol} · ${st.last_order.status}`) : '–'],
+      ['Errors (last cycle)', (st.errors && st.errors.length) ? `<span class="neg">${esc(st.errors.join('; '))}</span>` : '<span class="pos">none</span>'],
+    ];
+    $('agent').innerHTML = rows.map(r => `<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join('');
+
+    const c = orders.counts || {};
+    $('orderCounts').innerHTML = ['pending_submit','submitted','accepted','partially_filled','filled','cancelled','rejected','failed','expired','unknown']
+      .map(s => kpi(s.replace('_',' '), c[s] || 0, s === 'rejected' || s === 'failed' || s === 'unknown' ? (c[s] ? 'neg' : '') : '')).join('');
+
+    $('positions').innerHTML = '<tr><th>Symbol</th><th>Qty</th><th>Avg cost</th><th>Price</th><th>Market value</th><th>Unrealized P&L</th><th>Weight</th></tr>' +
+      (positions.length ? positions.map(p => `<tr><td>${esc(p.symbol)}</td><td>${esc(p.quantity)}</td><td>${fmtMoney(p.avg_cost)}</td><td>${fmtMoney(p.current_price)}</td><td>${fmtMoney(p.market_value)}</td><td class="${cls(p.unrealized_pnl)}">${fmtMoney(p.unrealized_pnl)}</td><td>${fmtPct(p.weight)}</td></tr>`).join('') : '<tr><td colspan="7" class="muted">no open positions</td></tr>');
+
+    line('equity', perf.equity_curve.map(p => Number(p.value)), '#58a6ff', true);
+    line('drawdown', perf.drawdown_curve, '#f85149', true, true);
+    const s = perf.stats || {}, ts = perf.trade_stats || {};
+    $('perf').innerHTML = [['Total return', fmtPct(s.total_return)], ['CAGR', fmtPct(s.cagr)], ['Volatility', fmtPct(s.annual_volatility)], ['Sharpe', s.sharpe_ratio ?? '–'], ['Sortino', s.sortino_ratio ?? '–'], ['Max drawdown', fmtPct(s.max_drawdown)], ['Round trips', s.n_round_trips ?? 0], ['Win rate', fmtPct(s.win_rate)], ['Profit factor', s.profit_factor ?? '–'], ['Fills (buy/sell)', `${ts.fills ?? 0} (${ts.buys ?? 0}/${ts.sells ?? 0})`], ['Commissions', fmtMoney(ts.commissions)]]
+      .map(r => `<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join('');
+    const mr = Object.entries(perf.monthly_returns || {});
+    $('monthly').innerHTML = '<tr><th>Month</th><th>Return</th></tr>' + (mr.length ? mr.map(([m, v]) => `<tr><td>${esc(m)}</td><td class="${cls(v)}">${fmtPct(v)}</td></tr>`).join('') : '<tr><td colspan="2" class="muted">no data yet</td></tr>');
+
+    $('orders').innerHTML = '<tr><th>Created</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Type</th><th>Status</th><th>Filled</th><th>Avg price</th><th>Strategy</th><th>Reason</th></tr>' +
+      (orders.orders.length ? orders.orders.map(o => `<tr><td>${esc(o.created_at.replace('T',' ').slice(0,19))}</td><td>${esc(o.symbol)}</td><td>${esc(o.side)}</td><td>${esc(o.quantity)}</td><td>${esc(o.order_type)}</td><td>${pill(['filled','accepted','submitted','partially_filled'].includes(o.status), o.status, o.status==='cancelled'||o.status==='expired')}</td><td>${esc(o.filled_quantity)}</td><td>${o.avg_fill_price ? fmtMoney(o.avg_fill_price) : '–'}</td><td>${esc(o.strategy)}</td><td class="muted">${esc(o.reject_reason || o.reason)}</td></tr>`).join('') : '<tr><td colspan="10" class="muted">no orders</td></tr>');
+
+    $('decisions').innerHTML = decisions.length ? decisions.map(d => `<details><summary>${esc(d.timestamp.replace('T',' ').slice(0,19))} · <b>${esc(d.decision)}</b> ${esc(d.symbol)} @ ${fmtMoney(d.current_price)} · ${esc(d.reason)}</summary><pre>${esc(d.explanation)}</pre></details>`).join('') : '<div class="muted">no decisions recorded yet</div>';
+
+    const ev = [...events.risk.map(e => ({...e, kind:'risk'})), ...events.system.map(e => ({...e, kind:'system'}))].sort((a,b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 60);
+    $('events').innerHTML = '<tr><th>Time</th><th>Kind</th><th>Severity</th><th>Event</th><th>Detail</th></tr>' + (ev.length ? ev.map(e => `<tr><td>${esc(e.timestamp.replace('T',' ').slice(0,19))}</td><td>${esc(e.kind)}</td><td class="${e.severity==='ERROR'||e.severity==='CRITICAL'?'neg':e.severity==='WARNING'?'warn':''}">${esc(e.severity)}</td><td>${esc(e.event_type)}</td><td class="muted">${esc(e.detail || e.message || '')}${e.symbol ? ' ['+esc(e.symbol)+']' : ''}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">no events</td></tr>');
+  } catch (err) {
+    $('updated').textContent = 'error: ' + err.message;
+  }
+}
+refresh();
+</script>
+</body>
+</html>
